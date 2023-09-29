@@ -1,0 +1,7 @@
+node_modules
+puppeteer
+.cache
+.env
+__test__
+logs/*
+data/*/*
