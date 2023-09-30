@@ -228,14 +228,5 @@ export async function createInvoice({
 
   await sleep(2000);
 
-  renameHTMLFiles(`${folderPath}/html/`);
+  renameHTMLFiles(`${folderPath}/`);
 }
-
-(async () => {
-  // if (trendyolData.length > 0 || hepsiburadaData.length > 0) {
-  //   const resultArray = [...trendyolData, ...hepsiburadaData];
-  //   await createInvoice(resultArray, date);
-  // } else {
-  //   console.log("You need to collect data to run this function");
-  // }
-})();
