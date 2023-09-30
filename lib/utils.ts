@@ -157,3 +157,7 @@ export function getDirectories(folderPath: string) {
     .filter((dirent) => dirent.isDirectory())
     .map((dirent) => dirent.name);
 }
+
+export function pad(number: number) {
+  return (number < 10 ? "0" : "") + number;
+}

@@ -63,7 +63,7 @@ import { Companies, Order, OrderScheme } from "./types";
 
         OrderScheme.array().parse(data);
 
-        await createInvoice({ company, orders: data, date });
+        await createInvoice({ company, orders: data, date, isTestMode: true });
       } catch (error) {
         logger.error(error);
         if (error instanceof ZodError) {

@@ -15,13 +15,12 @@ import { Companies, Order } from "../../types";
 import {
   calcMatrah,
   createDirectory,
+  pad,
   renameHTMLFiles,
   sleep,
 } from "../../lib/utils";
 import { env } from "../../lib/env";
 import { logger } from "../logger";
-
-// TODO: When there is a discount, the discount gets removed from the first product and the first product price might be less than the discount so it will cause the product to be negative
 
 export async function createInvoice({
   orders,
@@ -58,7 +57,7 @@ export async function createInvoice({
   await EInvoice.connect(); // veya EInvoice.getAccessToken()
   await EInvoice.getAccessToken();
 
-  const folderPath = `./data/${company}/html/${date}`;
+  const folderPath = `./data/${company}/${date}/html/`;
   createDirectory(folderPath);
 
   for (let i = 0; i < orders.length; i++) {
@@ -88,7 +87,7 @@ export async function createInvoice({
           unitPrice: item.priceWithVat,
           price: item.priceWithVat * item.quantity,
           unitType: EInvoiceUnitType.ADET,
-          totalAmount: item.priceWithVat * item.quantity, // IDK
+          totalAmount: item.priceWithVat * item.quantity,
           vatAmount: 0,
         };
       });
@@ -105,10 +104,12 @@ export async function createInvoice({
         productsTotalPrice: totalPriceWithVat,
         includedTaxesTotalPrice: totalPriceWithVat,
         date: order.orderDate.localDate,
-        time: `${order.orderDate.hours}:${order.orderDate.minutes}:${order.orderDate.seconds}`,
-        taxOffice: order.taxOffice,
-        buyerTitle: order.companyName,
-        taxOrIdentityNumber: order.VKN,
+        time: `${pad(order.orderDate.hours)}:${pad(
+          order.orderDate.minutes
+        )}:${pad(order.orderDate.seconds)}`,
+        taxOffice: order.taxOffice ? order.taxOffice : undefined,
+        buyerTitle: order.companyName ? order.companyName : undefined,
+        taxOrIdentityNumber: order.VKN ? order.VKN : undefined,
         note: "301-Mal İhracatı",
         products: ordersList,
       };
@@ -130,8 +131,8 @@ export async function createInvoice({
           unitPrice: item.priceWithoutVat,
           price: item.priceWithoutVat * item.quantity,
           unitType: EInvoiceUnitType.ADET,
-          totalAmount: item.priceWithoutVat * item.quantity, // IDK
-          vatRate: 0,
+          totalAmount: item.priceWithoutVat * item.quantity,
+          vatRate: item.vatRate,
           vatAmount: item.vatAmount,
         };
       });
@@ -145,7 +146,7 @@ export async function createInvoice({
         buyerFirstName: order.firstName,
         buyerLastName: order.lastName,
         fullAddress: order.fullAddress,
-        base: calcMatrah(totalNetVat, 20),
+        base: calcMatrah(totalNetVat, order.ordersList[0]!.vatRate),
         paymentPrice: totalPriceWithVat,
         invoiceType: InvoiceType.SATIS,
         country: EInvoiceCountry.TURKIYE,
@@ -153,10 +154,12 @@ export async function createInvoice({
         productsTotalPrice: totalPriceWithoutVat,
         includedTaxesTotalPrice: totalPriceWithVat,
         date: order.orderDate.localDate,
-        time: `${order.orderDate.hours}:${order.orderDate.minutes}:${order.orderDate.seconds}`,
-        taxOffice: order.taxOffice,
-        buyerTitle: order.companyName,
-        taxOrIdentityNumber: order.VKN,
+        time: `${pad(order.orderDate.hours)}:${pad(
+          order.orderDate.minutes
+        )}:${pad(order.orderDate.seconds)}`,
+        taxOffice: order.taxOffice ? order.taxOffice : undefined,
+        buyerTitle: order.companyName ? order.companyName : undefined,
+        taxOrIdentityNumber: order.VKN ? order.VKN : undefined,
         products: ordersList,
       };
     }

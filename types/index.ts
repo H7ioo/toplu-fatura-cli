@@ -46,9 +46,9 @@ export const OrderScheme = z.object({
     })
   ),
   // isCommercial
-  VKN: z.string().optional(),
-  companyName: z.string().optional(),
-  taxOffice: z.string().optional(),
+  VKN: z.string(),
+  companyName: z.string(),
+  taxOffice: z.string(),
 });
 // .and(OrderCommericalScheme);
 

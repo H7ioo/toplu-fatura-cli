@@ -16,8 +16,7 @@ import { logger } from "../logger";
 // TODO: Trendyol I can't manage to make a post request for some reason. It returns Unauthorized even though everything is identical.
 // TODO: It's definitely better to use Trendyol Developer API but it's pain in the ass because it doesn't provide noInovice filtering.
 
-const TRENDYOL_URL =
-  "https://partner.trendyol.com/orders/shipment-packages/all";
+const URL = "https://partner.trendyol.com/orders/shipment-packages/all";
 
 const rawOrders: TrendyolOrder[] = [];
 const orders: Order[] = [];
@@ -54,7 +53,7 @@ export async function trendyolCollect() {
   });
 
   // Navigate the page to a URL
-  await page.goto(TRENDYOL_URL);
+  await page.goto(URL);
 
   // Set screen size
   await page.setViewport({ width: 1080, height: 1024 });
@@ -158,7 +157,7 @@ export async function trendyolCollect() {
     const firstName = invoiceAddressObject.firstName;
     const lastName = invoiceAddressObject.lastName;
     const fullName = invoiceAddressObject.fullName;
-    const fullAddress = invoiceAddressObject.fullAddress;
+    const fullAddress = `${invoiceAddressObject.address1} ${invoiceAddressObject.neighborhood} ${invoiceAddressObject.district} ${invoiceAddressObject.city}`;
     const isCommercial = rawOrder.commercial;
     const isExport = rawOrder.glocal;
     const companyName = invoiceAddressObject.company;
@@ -185,7 +184,7 @@ export async function trendyolCollect() {
       throw new Error("Customer didn't purchase anything?");
     const ordersList = rawOrder.orderDetail.lines.map((orderLine) => {
       const vatRate = orderLine.vatBaseAmount;
-      const priceWithVat = orderLine.price;
+      const priceWithVat = orderLine.price - (orderLine.discountAmount ?? 0);
       const priceWithoutVat = calcPriceWithoutVat(priceWithVat, vatRate);
       const vatAmount = calcVat(priceWithVat, vatRate);
       const quantity = orderLine.packageItems?.length;
@@ -193,8 +192,6 @@ export async function trendyolCollect() {
 
       return { priceWithoutVat, priceWithVat, quantity, vatAmount, vatRate };
     });
-
-    // TODO: Discount
 
     orders.push({
       packageNumber,
