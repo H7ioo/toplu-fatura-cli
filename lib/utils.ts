@@ -31,9 +31,13 @@ export function createDirectory(path: string) {
   }
 }
 
-export async function convertAllHTMLFilesToPDF(date: string) {
-  const htmlFolderPath = `./html/${date}/`;
-  const pdfFolderPath = `./pdf/${date}/`;
+export async function convertAllHTMLFilesToPDF({
+  htmlFolderPath,
+  pdfFolderPath,
+}: {
+  htmlFolderPath: string;
+  pdfFolderPath: string;
+}) {
   try {
     createDirectory(pdfFolderPath);
 

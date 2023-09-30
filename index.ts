@@ -1,21 +1,18 @@
 import { checkbox, select } from "@inquirer/prompts";
-import { Companies, Order, OrderScheme } from "./types";
+import * as fs from "fs";
+import { ZodError } from "zod";
+import { convertAllHTMLFilesToPDF, getDirectories } from "./lib/utils";
 import { COMPANIES, TRANSACTIONS } from "./lib/variables";
 import { collectWrapper } from "./scripts/collect";
 import { createInvoice } from "./scripts/invoice/create";
-import * as fs from "fs";
-import { getDate, getDirectories } from "./lib/utils";
 import { logger } from "./scripts/logger";
-import { ZodError } from "zod";
+import { Companies, Order, OrderScheme } from "./types";
 
 (async () => {
   const transaction = await select({
     message: "Yapmak istediğiniz işlemi seçiniz",
     choices: TRANSACTIONS.map((transaction) => ({ value: transaction })),
   });
-
-  // TODO: Collecting data will be presented as TODAY's date
-  // TODO: Creating invoice will be a drop-down select instead of TODAY's date because you might collect than create invoice later. Also, PDF the same way
 
   if (transaction === "collectData") {
     const selectedCompanies = await checkbox<Companies[number]>({
@@ -34,11 +31,27 @@ import { ZodError } from "zod";
       choices: COMPANIES.map((company) => ({ value: company })),
     });
 
-    const date = getDate();
-
     for (let index = 0; index < selectedCompanies.length; index++) {
       const company = selectedCompanies[index];
+
+      const directories = getDirectories(`./data/${company}`).map(
+        (directory) => ({
+          value: directory,
+        })
+      );
+
       if (!company) throw new Error("Şirket bulunmadı!");
+      if (directories.length === 0) {
+        logger.info(
+          "Tarih dosyası bulunmadı. İlk önce fatura bilgilerini toplamanız gerekiyor."
+        );
+        continue;
+      }
+
+      const date = await select({
+        message: `${company} şirketi için tarih seçiniz`,
+        choices: directories,
+      });
 
       try {
         const dataString = fs.readFileSync(
@@ -59,7 +72,40 @@ import { ZodError } from "zod";
       }
     }
   } else if (transaction === "printPDF") {
-    // TODO:
-    console.log(getDirectories("./data/trendyol"));
+    const selectedCompanies = await checkbox<Companies[number]>({
+      message: "PDF oluşturmak istediğiniz şirket/leri seçiniz",
+      choices: COMPANIES.map((company) => ({ value: company })),
+    });
+
+    for (let index = 0; index < selectedCompanies.length; index++) {
+      const company = selectedCompanies[index];
+
+      const directories = getDirectories(`./data/${company}`).map(
+        (directory) => ({
+          value: directory,
+        })
+      );
+
+      if (!company) throw new Error("Şirket bulunmadı!");
+      if (directories.length === 0) {
+        logger.info(
+          "Tarih/HTML dosyası bulunmadı. İlk önce fatura oluşturmanız gerekiyor."
+        );
+        continue;
+      }
+
+      const date = await select({
+        message: `${company} şirketi için tarih seçiniz`,
+        choices: directories,
+      });
+
+      try {
+        const pdfFolderPath = `./data/${company}/${date}/pdf/`;
+        const htmlFolderPath = `./data/${company}/${date}/html/`;
+        await convertAllHTMLFilesToPDF({ htmlFolderPath, pdfFolderPath });
+      } catch (error) {
+        logger.error(error);
+      }
+    }
   }
 })();
