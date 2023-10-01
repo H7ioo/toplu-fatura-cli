@@ -178,11 +178,17 @@ export async function createInvoice({
         // true // window.print() komutunu html çıktısına ekler: varsayılan false
       );
 
-      fs.writeFile(`${folderPath}/${result}.html`, invoiceHTML, (err) => {
-        if (err) {
-          return console.log(err);
+      fs.writeFile(
+        `${folderPath}/${order.fullName}-${order.packageNumber}-${pad(
+          order.orderDate.hours
+        )}.${pad(order.orderDate.minutes)}.html`,
+        invoiceHTML,
+        (err) => {
+          if (err) {
+            return console.log(err);
+          }
         }
-      });
+      );
     } catch (e) {
       logger.error(`Fatura oluştururkan hata oluştu`, {
         error: e,
@@ -228,5 +234,5 @@ export async function createInvoice({
 
   await sleep(2000);
 
-  renameHTMLFiles(`${folderPath}/`);
+  // renameHTMLFiles(`${folderPath}/`);
 }

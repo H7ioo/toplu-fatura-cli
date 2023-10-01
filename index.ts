@@ -63,7 +63,7 @@ import { Companies, Order, OrderScheme } from "./types";
 
         OrderScheme.array().parse(data);
 
-        await createInvoice({ company, orders: data, date });
+        await createInvoice({ company, orders: data, date, isTestMode: true });
       } catch (error) {
         logger.error(error);
         if (error instanceof ZodError) {
@@ -109,3 +109,7 @@ import { Companies, Order, OrderScheme } from "./types";
     }
   }
 })();
+
+// TODO: POST REQUEST INVOICE UPLOAD
+// TODO: TRENDYOL https://sellerpublic-mars.trendyol.com/order-core-sellercenterordersbff-service/shipment-packages/${PACKET_NO}/customer-invoice
+// TODO: HEPSIBURADA https://merchant.hepsiburada.com/fulfilment/api/v1/deliveries/${TESLIMAT_NO = CODE}/upload PUT REQ InvoiceFileAsBase64 data:application/pdf;bas64,...
