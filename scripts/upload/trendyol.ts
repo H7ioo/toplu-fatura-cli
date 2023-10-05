@@ -4,8 +4,11 @@ import axios, { AxiosError } from "axios";
 import * as fs from "fs";
 import FormData from "form-data";
 import { logger } from "../logger";
+import { Invoice } from "../../types";
 
 const GOTO_URL = "https://partner.trendyol.com/orders/shipment-packages/all";
+// invoiceNumber
+// invoiceDateTime
 const invoiceURL = (invoiceId: string) =>
   `https://sellerpublic-mars.trendyol.com/order-core-sellercenterordersbff-service/shipment-packages/${invoiceId}/customer-invoice`;
 
@@ -50,50 +53,58 @@ export async function trendyolUpload(date: string) {
   )[0]?.value;
   if (!authToken) throw new Error("Auth token not found.");
 
-  // TODO: File doesn't exist
+  const invoicesFile = `./data/trendyol/${date}/invoices.json`;
 
-  const folderPath = `./data/trendyol/${date}/pdf`;
+  if (!fs.existsSync(invoicesFile)) {
+    logger.error("Invoices JSON file doesn't exist!");
+    return;
+  }
 
-  // TODO: invoices.json
+  fs.readFile(invoicesFile, "utf8", async (err, data) => {
+    if (err) {
+      logger.error(err.message, err);
+    }
 
-  try {
-    fs.readdir(folderPath, async function (err, files) {
-      if (err) {
-        logger.error("Unable to scan directory: " + err);
-        return;
-      }
+    const invoices: Invoice[] = JSON.parse(data);
 
-      for (let index = 0; index < files.length; index++) {
-        const file = files[index];
+    for (let index = 0; index < invoices.length; index++) {
+      const invoice = invoices[index];
+      if (!invoice) throw new Error("Invoice doesn't exist?");
 
-        if (!file) throw new Error("File not found?");
-
-        const filePath = `${folderPath}/${file}`; // Replace with the path to your file
-        const fileStream = fs.createReadStream(filePath);
-        // File path looks like this FIRST_NAME LAST_NAME-PACKAGE_NUBMER-HOURS.MINUTES.pdf
-        const packageNumber = filePath.split("-")[1];
-
-        if (!packageNumber) throw new Error("Packege number doesn't exist?");
+      try {
+        const fileStream = fs.createReadStream(invoice.filePath);
+        if (!fileStream) throw new Error("File doesn't exist");
 
         const formData = new FormData();
         formData.append("file", fileStream);
-        await axios.post(invoiceURL(packageNumber), formData, {
-          headers: {
-            authorization: `Bearer ${authToken}`,
-            "Content-Type": "multipart/form-data",
-            Accept: "application/json, text/plain, */*",
-            authority: "sellerpublic-mars.trendyol.com",
-            origin: "https://partner.trendyol.com",
-          },
-        });
+        await axios.post(
+          invoiceURL(invoice.packageNumber.toString()),
+          formData,
+          {
+            headers: {
+              authorization: `Bearer ${authToken}`,
+              "Content-Type": "multipart/form-data",
+              Accept: "application/json, text/plain, */*",
+              authority: "sellerpublic-mars.trendyol.com",
+              origin: "https://partner.trendyol.com",
+            },
+            params: invoice.isExport
+              ? {
+                  invoiceNumber: invoice.id,
+                  invoiceDateTime: invoice.orderTimestamp,
+                }
+              : undefined,
+          }
+        );
+      } catch (error) {
+        if (error instanceof Error) {
+          logger.error(error.message, error);
+        } else if (error instanceof AxiosError) {
+          logger.error(error.message, error);
+        }
       }
-    });
-  } catch (error) {
-    logger.error(error);
-    if (error instanceof AxiosError) {
-      logger.error(`Axios Error occurred: ${error.message}`, error);
     }
-  }
+  });
 }
 
 (async () => {

@@ -6,7 +6,7 @@ import { COMPANIES, TRANSACTIONS } from "./lib/variables";
 import { collectWrapper } from "./scripts/collect";
 import { createInvoice } from "./scripts/invoice/create";
 import { logger } from "./scripts/logger";
-import { Companies, Order, OrderScheme } from "./types";
+import { Companies, Invoice, InvoiceScheme, Order, OrderScheme } from "./types";
 import { uploadWrapper } from "./scripts/upload";
 
 (async () => {
@@ -38,6 +38,7 @@ import { uploadWrapper } from "./scripts/upload";
 
     for (let index = 0; index < selectedCompanies.length; index++) {
       const company = selectedCompanies[index];
+      if (!company) throw new Error("Şirket bulunmadı!");
 
       const directories = getDirectories(`./data/${company}`).map(
         (directory) => ({
@@ -45,7 +46,6 @@ import { uploadWrapper } from "./scripts/upload";
         })
       );
 
-      if (!company) throw new Error("Şirket bulunmadı!");
       if (directories.length === 0) {
         logger.info(
           "Tarih dosyası bulunmadı. İlk önce fatura bilgilerini toplamanız gerekiyor."
@@ -122,23 +122,49 @@ import { uploadWrapper } from "./scripts/upload";
       const company = selectedCompanies[index];
 
       if (!company) throw new Error("Şirket bulunmadı!");
-      // TODO: Select Date
-      // TODO: Check if PDF exists
-      // const directories = getDirectories(`./data/${company}/${}`).map(
-      //   (directory) => ({
-      //     value: directory,
-      //   })
-      // );
 
-      // await uploadWrapper[company]();
+      const directories = getDirectories(`./data/${company}`).map(
+        (directory) => ({
+          value: directory,
+        })
+      );
+
+      if (directories.length === 0) {
+        logger.info(
+          "Tarih dosyası bulunmadı. İlk önce fatura bilgilerini toplamanız gerekiyor."
+        );
+        continue;
+      }
+
+      const date = await select({
+        message: `${company} şirketi için tarih seçiniz`,
+        choices: directories,
+      });
+
+      try {
+        const dataString = fs.readFileSync(
+          `./data/${company}/${date}/invoices.json`,
+          "utf8"
+        );
+
+        const data: Invoice[] = JSON.parse(dataString);
+
+        InvoiceScheme.array().parse(data);
+
+        await uploadWrapper[company](date);
+      } catch (error) {
+        logger.error(error);
+        if (error instanceof ZodError) {
+          logger.error(error.message, error);
+        }
+      }
     }
   }
 })();
 
-// TODO: POST REQUEST INVOICE UPLOAD
-// TODO: TRENDYOL https://sellerpublic-mars.trendyol.com/order-core-sellercenterordersbff-service/shipment-packages/${PACKET_NO}/customer-invoice
 // TODO: HEPSIBURADA https://merchant.hepsiburada.com/fulfilment/api/v1/deliveries/${TESLIMAT_NO = CODE}/upload PUT REQ InvoiceFileAsBase64 data:application/pdf;bas64,...
 
-// TODO: Export Trendyol :https://sellerpublic-mars.trendyol.com/order-core-sellercenterordersbff-service/shipment-packages/1747454801/customer-invoice?invoiceNumber=8f40d5af-7a57-4e65-92c0-113669a42544_f&invoiceDateTime=1696194000000
+// TODO: CONFIG
+// TODO NOTION
 
-// TODO: invoices.json => data
+// TODO: REMOVE DUPLACATED CODE
