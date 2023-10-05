@@ -154,9 +154,9 @@ export async function trendyolCollect() {
   rawOrders.forEach((rawOrder) => {
     const packageNumber = rawOrder.id;
     const invoiceAddressObject = rawOrder.orderDetail.invoiceAddress;
-    const firstName = invoiceAddressObject.firstName;
-    const lastName = invoiceAddressObject.lastName;
-    const fullName = invoiceAddressObject.fullName;
+    const firstName = invoiceAddressObject.firstName.trim();
+    const lastName = invoiceAddressObject.lastName.trim();
+    const fullName = invoiceAddressObject.fullName.trim();
     const fullAddress = `${invoiceAddressObject.address1} ${invoiceAddressObject.neighborhood} ${invoiceAddressObject.district} ${invoiceAddressObject.city}`;
     const isCommercial = rawOrder.commercial;
     const isExport = rawOrder.glocal;

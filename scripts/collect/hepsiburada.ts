@@ -151,11 +151,13 @@ export async function hepsiburadaCollect() {
       throw new Error("shippingAddressObject doesn't exist?");
     const firstName = invoiceAddressObject.UserName.split(" ")
       .slice(0, -1)
-      .join(" ");
+      .join(" ")
+      .trim();
     const lastName = invoiceAddressObject.UserName.split(" ")
       .slice(-1)
-      .join(" ");
-    const fullName = invoiceAddressObject.UserName;
+      .join(" ")
+      .trim();
+    const fullName = invoiceAddressObject.UserName.trim();
     const fullAddress = `${invoiceAddressObject.AddressDetail} ${invoiceAddressObject.District} / ${invoiceAddressObject.County} / ${invoiceAddressObject.City}`;
     const isCommercial = ordersObject.IsCustomerCorporateIconShowable;
     const isExport = false; // Doesn't support it yet

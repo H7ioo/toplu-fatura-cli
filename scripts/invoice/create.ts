@@ -11,16 +11,13 @@ import EInvoice, {
   InvoiceType, // Fatura türü
 } from "e-fatura";
 import * as fs from "fs";
-import { Companies, Order } from "../../types";
-import {
-  calcMatrah,
-  createDirectory,
-  pad,
-  renameHTMLFiles,
-  sleep,
-} from "../../lib/utils";
 import { env } from "../../lib/env";
+import { calcMatrah, createDirectory, pad, sleep } from "../../lib/utils";
+import { Companies, Invoice, InvoiceScheme, Order } from "../../types";
 import { logger } from "../logger";
+import { ZodError } from "zod";
+
+// TODO: AFTER FINISH CONSOLE.LOG ERROR COUNT etc.
 
 export async function createInvoice({
   orders,
@@ -33,6 +30,8 @@ export async function createInvoice({
   isTestMode?: boolean;
   company: Companies[number];
 }) {
+  const invoices: Invoice[] = [];
+
   logger.info(
     `${orders.length} orders invoice for ${company} company will be created.`
   );
@@ -57,7 +56,7 @@ export async function createInvoice({
   await EInvoice.connect(); // veya EInvoice.getAccessToken()
   await EInvoice.getAccessToken();
 
-  const folderPath = `./data/${company}/${date}/html/`;
+  const folderPath = `./data/${company}/${date}/html`;
   createDirectory(folderPath);
 
   for (let i = 0; i < orders.length; i++) {
@@ -178,17 +177,26 @@ export async function createInvoice({
         // true // window.print() komutunu html çıktısına ekler: varsayılan false
       );
 
-      fs.writeFile(
-        `${folderPath}/${order.fullName}-${order.packageNumber}-${pad(
-          order.orderDate.hours
-        )}.${pad(order.orderDate.minutes)}.html`,
-        invoiceHTML,
-        (err) => {
-          if (err) {
-            return console.log(err);
-          }
+      const fileName = `${order.fullName}-${order.packageNumber}-${pad(
+        order.orderDate.hours
+      )}.${pad(order.orderDate.minutes)}.html`;
+
+      fs.writeFile(`${folderPath}/${fileName}`, invoiceHTML, (err) => {
+        if (err) {
+          return console.log(err);
         }
-      );
+      });
+
+      invoices.push({
+        id: result,
+        packageNumber: order.packageNumber,
+        fullName: order.fullName,
+        isExport: order.isExport,
+        orderTimestamp: order.orderDate.orderTimestamp,
+        fileName,
+        folderPath: `${folderPath}/`,
+        filePath: `${folderPath}/${fileName}`,
+      });
     } catch (e) {
       logger.error(`Fatura oluştururkan hata oluştu`, {
         error: e,
@@ -234,5 +242,21 @@ export async function createInvoice({
 
   await sleep(2000);
 
-  // renameHTMLFiles(`${folderPath}/`);
+  try {
+    InvoiceScheme.array().parse(invoices);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      logger.error(error.message, error);
+    }
+  }
+
+  fs.writeFile(
+    `./data/${company}/${date}/invoices.json`,
+    JSON.stringify(invoices),
+    (err) => {
+      if (err) {
+        logger.error(err);
+      }
+    }
+  );
 }

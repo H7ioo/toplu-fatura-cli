@@ -7,12 +7,17 @@ import { collectWrapper } from "./scripts/collect";
 import { createInvoice } from "./scripts/invoice/create";
 import { logger } from "./scripts/logger";
 import { Companies, Order, OrderScheme } from "./types";
+import { uploadWrapper } from "./scripts/upload";
 
 (async () => {
   const transaction = await select({
     message: "Yapmak istediğiniz işlemi seçiniz",
     choices: TRANSACTIONS.map((transaction) => ({ value: transaction })),
   });
+
+  // TODO: Select date before
+  // TODO: All
+  // TODO: Select specific order
 
   if (transaction === "collectData") {
     const selectedCompanies = await checkbox<Companies[number]>({
@@ -107,9 +112,33 @@ import { Companies, Order, OrderScheme } from "./types";
         logger.error(error);
       }
     }
+  } else if (transaction === "uploadInvoice") {
+    const selectedCompanies = await checkbox<Companies[number]>({
+      message: "Fatura yüklemek istediğiniz şirket/leri seçiniz",
+      choices: COMPANIES.map((company) => ({ value: company })),
+    });
+
+    for (let index = 0; index < selectedCompanies.length; index++) {
+      const company = selectedCompanies[index];
+
+      if (!company) throw new Error("Şirket bulunmadı!");
+      // TODO: Select Date
+      // TODO: Check if PDF exists
+      // const directories = getDirectories(`./data/${company}/${}`).map(
+      //   (directory) => ({
+      //     value: directory,
+      //   })
+      // );
+
+      // await uploadWrapper[company]();
+    }
   }
 })();
 
 // TODO: POST REQUEST INVOICE UPLOAD
 // TODO: TRENDYOL https://sellerpublic-mars.trendyol.com/order-core-sellercenterordersbff-service/shipment-packages/${PACKET_NO}/customer-invoice
 // TODO: HEPSIBURADA https://merchant.hepsiburada.com/fulfilment/api/v1/deliveries/${TESLIMAT_NO = CODE}/upload PUT REQ InvoiceFileAsBase64 data:application/pdf;bas64,...
+
+// TODO: Export Trendyol :https://sellerpublic-mars.trendyol.com/order-core-sellercenterordersbff-service/shipment-packages/1747454801/customer-invoice?invoiceNumber=8f40d5af-7a57-4e65-92c0-113669a42544_f&invoiceDateTime=1696194000000
+
+// TODO: invoices.json => data

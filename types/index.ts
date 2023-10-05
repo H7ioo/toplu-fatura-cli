@@ -54,3 +54,16 @@ export const OrderScheme = z.object({
 
 export type Order = z.infer<typeof OrderScheme>;
 export type Companies = typeof COMPANIES;
+
+export const InvoiceScheme = z.object({
+  id: z.string(),
+  packageNumber: z.number(),
+  orderTimestamp: z.number(),
+  isExport: z.boolean(),
+  fullName: z.string(),
+  fileName: z.string(),
+  folderPath: z.string(),
+  filePath: z.string(),
+});
+
+export type Invoice = z.infer<typeof InvoiceScheme>;

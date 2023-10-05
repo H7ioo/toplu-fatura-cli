@@ -4,4 +4,5 @@ export const TRANSACTIONS = [
   "createInvoice",
   "collectData",
   "printPDF",
+  "uploadInvoice",
 ] as const;
