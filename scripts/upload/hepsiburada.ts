@@ -1,129 +1,120 @@
-// import axios, { AxiosError } from "axios";
-// import FormData from "form-data";
-// import * as fs from "fs";
-// import puppeteer from "puppeteer";
-// import { env } from "../../lib/env";
-// import { Invoice } from "../../types";
-// import { invoicePostError } from "../../types/trendyol";
-// import { logger } from "../logger";
+import axios, { AxiosError } from "axios";
+import FormData from "form-data";
+import * as fs from "fs";
+import puppeteer from "puppeteer";
+import { env } from "../../lib/env";
+import { Invoice } from "../../types";
+import { logger } from "../logger";
+import { sleep } from "../../lib/utils";
 
-// const GOTO_URL = "https://partner.trendyol.com/orders/shipment-packages/all";
-// // invoiceNumber
-// // invoiceDateTime
-// const invoiceURL = (invoiceId: string) =>
-//   `https://sellerpublic-mars.trendyol.com/order-core-sellercenterordersbff-service/shipment-packages/${invoiceId}/customer-invoice`;
+const GOTO_URL = "https://merchant.hepsiburada.com/fulfilment/to-be-packed";
+// invoiceNumber
+// invoiceDateTime
+const invoiceURL = (invoiceId: string) =>
+  `https://merchant.hepsiburada.com/fulfilment/api/v1/deliveries/${invoiceId}/upload`;
 
-// export async function hepsiburadaUpload(date: string) {
-//   // Launch the browser and open a new blank page
-//   const browser = await puppeteer.launch({
-//     headless: false,
-//     userDataDir: "./puppeteer/user_data",
-//   });
+export async function hepsiburadaUpload(date: string) {
+  // Launch the browser and open a new blank page
+  const browser = await puppeteer.launch({
+    headless: false,
+    userDataDir: "./puppeteer/user_data",
+  });
 
-//   const page = await browser.newPage();
+  const page = await browser.newPage();
 
-//   // Navigate the page to a URL
-//   await page.goto(GOTO_URL);
+  // Navigate the page to a URL
+  await page.goto(GOTO_URL);
 
-//   // Set screen size
-//   await page.setViewport({ width: 1080, height: 1024 });
+  // Set screen size
+  await page.setViewport({ width: 1080, height: 1024 });
 
-//   // Login
-//   const emailInput =
-//     "#app-wrapper > div > div.auth.with-header-footer > div > div > div.login.g-d-flex > div.form > div.login-form > div > form > div.email-phone-input-wrapper.g-mt-20.g-mb-20 > div > div > div > div > input[type=text]";
+  const emailInput = "#username";
+  const passwordInput = "#password";
+  const loginBtn = "#merchant-sign-in-button";
 
-//   const emailInputExists = await page.$(emailInput);
-//   if (emailInputExists) {
-//     await page.waitForSelector(emailInput);
-//     await page.focus(emailInput);
-//     await page.keyboard.type(env.TRENDYOL_EMAIL);
-//     const passwordInput =
-//       "#app-wrapper > div > div.auth.with-header-footer > div > div > div.login.g-d-flex > div.form > div.login-form > div > form > div.password-input-wrapper.g-mb-20 > div.password.g-input > div > div > div > input[type=password]";
-//     await page.waitForSelector(passwordInput);
-//     await page.focus(passwordInput);
-//     await page.keyboard.type(env.TRENDYOL_PASSWORD);
+  await sleep(2000);
 
-//     const loginButton =
-//       "#app-wrapper > div > div.auth.with-header-footer > div > div > div.login.g-d-flex > div.form > div.login-form > div > form > button > div";
-//     await page.waitForSelector(loginButton);
-//     await page.click(loginButton);
-//   }
+  const emailInputExists = await page.$(emailInput);
+  if (emailInputExists) {
+    try {
+      await page.waitForSelector(emailInput);
+      await page.type(emailInput, env.HEPSIBURADA_EMAIL);
+      await page.type(passwordInput, env.HEPSIBURADA_PASSWORD);
+      await page.click(loginBtn);
+      await page.waitForNavigation();
+      // TODO: Captcha popup
+    } catch (e) {
+      logger.error(e);
+    }
+  }
 
-//   const authToken = (await page.cookies()).filter(
-//     (c) => c.domain === "partner.trendyol.com" && c.name === "auth_token"
-//   )[0]?.value;
-//   if (!authToken) throw new Error("Auth token not found.");
+  await sleep(3000);
 
-//   const invoicesFile = `./data/trendyol/${date}/invoices.json`;
+  // This format that I want the cookie in
+  const cookies = await page.evaluate(() => document.cookie);
+  if (!cookies) throw new Error("Auth token not found.");
 
-//   if (!fs.existsSync(invoicesFile)) {
-//     logger.error("Invoices JSON file doesn't exist!");
-//     return;
-//   }
+  console.log(cookies);
 
-//   fs.readFile(invoicesFile, "utf8", async (err, data) => {
-//     if (err) {
-//       logger.error(err.message, err);
-//     }
+  const invoicesFile = `./data/hepsiburada/${date}/invoices.json`;
 
-//     const invoices: Invoice[] = JSON.parse(data);
+  if (!fs.existsSync(invoicesFile)) {
+    logger.error("Invoices JSON file doesn't exist!");
+    return;
+  }
 
-//     for (let index = 0; index < invoices.length; index++) {
-//       const invoice = invoices[index];
-//       if (!invoice) throw new Error("Invoice doesn't exist?");
+  fs.readFile(invoicesFile, "utf8", async (err, data) => {
+    if (err) {
+      logger.error(err.message, err);
+    }
 
-//       try {
-//         const fileStream = fs.createReadStream(invoice.filePath);
-//         if (!fileStream) throw new Error("File doesn't exist");
+    const invoices: Invoice[] = JSON.parse(data);
 
-//         const formData = new FormData();
-//         formData.append("file", fileStream);
+    for (let index = 0; index < invoices.length; index++) {
+      const invoice = invoices[index];
+      if (!invoice) throw new Error("Invoice doesn't exist?");
 
-//         const res = await axios.post(
-//           invoiceURL(invoice.packageNumber.toString()),
-//           formData,
-//           {
-//             headers: {
-//               authorization: `Bearer ${authToken}`,
-//               "Content-Type": "multipart/form-data",
-//               Accept: "application/json, text/plain, */*",
-//               authority: "sellerpublic-mars.trendyol.com",
-//               origin: "https://partner.trendyol.com",
-//             },
-//             params: invoice.isExport
-//               ? {
-//                   invoiceNumber: invoice.id,
-//                   invoiceDateTime: invoice.orderTimestamp,
-//                 }
-//               : undefined,
-//           }
-//         );
+      if (!invoice.deliveryNumber)
+        throw new Error("Delivery number doesn't exist?");
 
-//         // TODO: ADD SLEEP
+      try {
+        const fileBuffer = fs.readFileSync(invoice.filePath);
+        if (!fileBuffer) throw new Error("File doesn't exist");
 
-//         if (res.status >= 200 && res.status < 300) {
-//           console.log(
-//             `${invoice.packageNumber} fatura başarıyla yüklendi. Index: ${
-//               index + 1
-//             }/${invoices.length}`
-//           );
-//         }
-//       } catch (error) {
-//         if (error instanceof AxiosError) {
-//           logger.error(error.message, error);
-//           if (error.status === 400) {
-//             const err: AxiosError<invoicePostError> = error;
-//             logger.error(
-//               `Error uploading invoice: ${err.response?.data.errors[0]?.message}`,
-//               err
-//             );
-//           }
-//         } else if (error instanceof Error) {
-//           logger.error(error.message, error);
-//         }
-//       }
-//     }
-//   });
+        const base64Data = Buffer.from(fileBuffer).toString("base64");
 
-//   await browser.close();
-// }
+        const res = await axios.put(
+          invoiceURL(invoice.deliveryNumber),
+          { InvoiceFileAsBase64: `data:application/pdf;base64,${base64Data}` },
+          {
+            headers: {
+              cookie: cookies,
+              "Content-Type": "application/json",
+              Accept: "application/json, text/plain, */*",
+              authority: "merchant.hepsiburada.com",
+              origin: "https://merchant.hepsiburada.com",
+            },
+          }
+        );
+
+        // TODO: ADD SLEEP
+
+        if (res.status >= 200 && res.status < 300) {
+          console.log(
+            `${invoice.packageNumber} fatura başarıyla yüklendi. Index: ${
+              index + 1
+            }/${invoices.length}`
+          );
+        }
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          logger.error(error.message, error);
+        } else if (error instanceof Error) {
+          logger.error(error.message, error);
+        }
+      }
+    }
+  });
+
+  await browser.close();
+}

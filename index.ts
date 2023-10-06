@@ -171,11 +171,6 @@ import { uploadWrapper } from "./scripts/upload";
   }
 })();
 
-// TODO: HEPSIBURADA https://merchant.hepsiburada.com/fulfilment/api/v1/deliveries/${TESLIMAT_NO = CODE}/upload PUT REQ InvoiceFileAsBase64 data:application/pdf;bas64,...
-// 204 OK no RES
-// WHEN RE UPLOAD NO ERROR OCCURS
-// cookie all document.cookie
-// copy headers from postman
 // TODO: CONFIG
 // TODO NOTION
 

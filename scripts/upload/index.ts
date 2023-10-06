@@ -1,4 +1,5 @@
 import { Companies } from "../../types";
+import { hepsiburadaUpload } from "./hepsiburada";
 import { trendyolUpload } from "./trendyol";
 
 export const uploadWrapper: Record<
@@ -6,5 +7,5 @@ export const uploadWrapper: Record<
   (date: string) => Promise<void>
 > = {
   trendyol: trendyolUpload,
-  hepsiburada: async () => undefined,
+  hepsiburada: hepsiburadaUpload,
 };
