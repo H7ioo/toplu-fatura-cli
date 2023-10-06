@@ -1,11 +1,11 @@
 import axios, { AxiosError } from "axios";
-import FormData from "form-data";
 import * as fs from "fs";
+import { readFile } from "fs/promises";
 import puppeteer from "puppeteer";
 import { env } from "../../lib/env";
+import { sleep } from "../../lib/utils";
 import { Invoice } from "../../types";
 import { logger } from "../logger";
-import { sleep } from "../../lib/utils";
 
 const GOTO_URL = "https://merchant.hepsiburada.com/fulfilment/to-be-packed";
 // invoiceNumber
@@ -54,8 +54,6 @@ export async function hepsiburadaUpload(date: string) {
   const cookies = await page.evaluate(() => document.cookie);
   if (!cookies) throw new Error("Auth token not found.");
 
-  console.log(cookies);
-
   const invoicesFile = `./data/hepsiburada/${date}/invoices.json`;
 
   if (!fs.existsSync(invoicesFile)) {
@@ -63,58 +61,53 @@ export async function hepsiburadaUpload(date: string) {
     return;
   }
 
-  fs.readFile(invoicesFile, "utf8", async (err, data) => {
-    if (err) {
-      logger.error(err.message, err);
-    }
+  const file = await readFile(invoicesFile, "utf8");
+  const invoices: Invoice[] = JSON.parse(file);
 
-    const invoices: Invoice[] = JSON.parse(data);
+  for (let index = 0; index < invoices.length; index++) {
+    const invoice = invoices[index];
+    if (!invoice) throw new Error("Invoice doesn't exist?");
 
-    for (let index = 0; index < invoices.length; index++) {
-      const invoice = invoices[index];
-      if (!invoice) throw new Error("Invoice doesn't exist?");
+    if (!invoice.deliveryNumber)
+      throw new Error("Delivery number doesn't exist?");
 
-      if (!invoice.deliveryNumber)
-        throw new Error("Delivery number doesn't exist?");
+    try {
+      const fileBuffer = fs.readFileSync(invoice.filePath);
+      if (!fileBuffer) throw new Error("File doesn't exist");
 
-      try {
-        const fileBuffer = fs.readFileSync(invoice.filePath);
-        if (!fileBuffer) throw new Error("File doesn't exist");
+      const base64Data = Buffer.from(fileBuffer).toString("base64");
 
-        const base64Data = Buffer.from(fileBuffer).toString("base64");
+      const res = await axios.put(
+        invoiceURL(invoice.deliveryNumber),
+        { InvoiceFileAsBase64: `data:application/pdf;base64,${base64Data}` },
+        {
+          headers: {
+            cookie: cookies,
+            "Content-Type": "application/json",
+            Accept: "application/json, text/plain, */*",
+            authority: "merchant.hepsiburada.com",
+            origin: "https://merchant.hepsiburada.com",
+          },
+        }
+      );
 
-        const res = await axios.put(
-          invoiceURL(invoice.deliveryNumber),
-          { InvoiceFileAsBase64: `data:application/pdf;base64,${base64Data}` },
-          {
-            headers: {
-              cookie: cookies,
-              "Content-Type": "application/json",
-              Accept: "application/json, text/plain, */*",
-              authority: "merchant.hepsiburada.com",
-              origin: "https://merchant.hepsiburada.com",
-            },
-          }
+      // TODO: ADD SLEEP
+
+      if (res.status >= 200 && res.status < 300) {
+        console.log(
+          `${invoice.packageNumber} fatura başarıyla yüklendi. Index: ${
+            index + 1
+          }/${invoices.length}`
         );
-
-        // TODO: ADD SLEEP
-
-        if (res.status >= 200 && res.status < 300) {
-          console.log(
-            `${invoice.packageNumber} fatura başarıyla yüklendi. Index: ${
-              index + 1
-            }/${invoices.length}`
-          );
-        }
-      } catch (error) {
-        if (error instanceof AxiosError) {
-          logger.error(error.message, error);
-        } else if (error instanceof Error) {
-          logger.error(error.message, error);
-        }
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        logger.error(error.message, error);
+      } else if (error instanceof Error) {
+        logger.error(error.message, error);
       }
     }
-  });
+  }
 
   await browser.close();
 }

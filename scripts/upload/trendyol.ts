@@ -6,6 +6,7 @@ import { env } from "../../lib/env";
 import { Invoice } from "../../types";
 import { invoicePostError } from "../../types/trendyol";
 import { logger } from "../logger";
+import { readFile } from "fs/promises";
 
 const GOTO_URL = "https://partner.trendyol.com/orders/shipment-packages/all";
 // invoiceNumber
@@ -61,69 +62,64 @@ export async function trendyolUpload(date: string) {
     return;
   }
 
-  fs.readFile(invoicesFile, "utf8", async (err, data) => {
-    if (err) {
-      logger.error(err.message, err);
-    }
+  const file = await readFile(invoicesFile, "utf8");
+  const invoices: Invoice[] = JSON.parse(file);
 
-    const invoices: Invoice[] = JSON.parse(data);
+  for (let index = 0; index < invoices.length; index++) {
+    const invoice = invoices[index];
+    if (!invoice) throw new Error("Invoice doesn't exist?");
 
-    for (let index = 0; index < invoices.length; index++) {
-      const invoice = invoices[index];
-      if (!invoice) throw new Error("Invoice doesn't exist?");
+    try {
+      const fileStream = fs.createReadStream(invoice.filePath);
+      if (!fileStream) throw new Error("File doesn't exist");
 
-      try {
-        const fileStream = fs.createReadStream(invoice.filePath);
-        if (!fileStream) throw new Error("File doesn't exist");
+      const formData = new FormData();
+      formData.append("file", fileStream);
 
-        const formData = new FormData();
-        formData.append("file", fileStream);
+      const res = await axios.post(
+        invoiceURL(invoice.packageNumber.toString()),
+        formData,
+        {
+          headers: {
+            authorization: `Bearer ${authToken}`,
+            "Content-Type": "multipart/form-data",
+            Accept: "application/json, text/plain, */*",
+            authority: "sellerpublic-mars.trendyol.com",
+            origin: "https://partner.trendyol.com",
+          },
+          params: invoice.isExport
+            ? {
+                invoiceNumber: invoice.id,
+                invoiceDateTime: invoice.orderTimestamp,
+              }
+            : undefined,
+        }
+      );
 
-        const res = await axios.post(
-          invoiceURL(invoice.packageNumber.toString()),
-          formData,
-          {
-            headers: {
-              authorization: `Bearer ${authToken}`,
-              "Content-Type": "multipart/form-data",
-              Accept: "application/json, text/plain, */*",
-              authority: "sellerpublic-mars.trendyol.com",
-              origin: "https://partner.trendyol.com",
-            },
-            params: invoice.isExport
-              ? {
-                  invoiceNumber: invoice.id,
-                  invoiceDateTime: invoice.orderTimestamp,
-                }
-              : undefined,
-          }
+      // TODO: ADD SLEEP
+
+      if (res.status >= 200 && res.status < 300) {
+        console.log(
+          `${invoice.packageNumber} fatura başarıyla yüklendi. Index: ${
+            index + 1
+          }/${invoices.length}`
         );
-
-        // TODO: ADD SLEEP
-
-        if (res.status >= 200 && res.status < 300) {
-          console.log(
-            `${invoice.packageNumber} fatura başarıyla yüklendi. Index: ${
-              index + 1
-            }/${invoices.length}`
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        logger.error(error.message, error);
+        if (error.status === 400) {
+          const err: AxiosError<invoicePostError> = error;
+          logger.error(
+            `Error uploading invoice: ${err.response?.data.errors[0]?.message}`,
+            err
           );
         }
-      } catch (error) {
-        if (error instanceof AxiosError) {
-          logger.error(error.message, error);
-          if (error.status === 400) {
-            const err: AxiosError<invoicePostError> = error;
-            logger.error(
-              `Error uploading invoice: ${err.response?.data.errors[0]?.message}`,
-              err
-            );
-          }
-        } else if (error instanceof Error) {
-          logger.error(error.message, error);
-        }
+      } else if (error instanceof Error) {
+        logger.error(error.message, error);
       }
     }
-  });
+  }
 
   await browser.close();
 }
