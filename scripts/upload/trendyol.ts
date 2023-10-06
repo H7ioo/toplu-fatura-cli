@@ -1,10 +1,11 @@
 import puppeteer from "puppeteer";
 import { env } from "../../lib/env";
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 import * as fs from "fs";
 import FormData from "form-data";
 import { logger } from "../logger";
 import { Invoice } from "../../types";
+import { invoicePostError } from "../../types/trendyol";
 
 const GOTO_URL = "https://partner.trendyol.com/orders/shipment-packages/all";
 // invoiceNumber
@@ -77,7 +78,8 @@ export async function trendyolUpload(date: string) {
 
         const formData = new FormData();
         formData.append("file", fileStream);
-        await axios.post(
+
+        const res = await axios.post(
           invoiceURL(invoice.packageNumber.toString()),
           formData,
           {
@@ -96,17 +98,30 @@ export async function trendyolUpload(date: string) {
               : undefined,
           }
         );
+
+        if (res.status >= 200 && res.status < 300) {
+          console.log(
+            `${invoice.packageNumber} invoice uploaded successfully. Index: ${
+              index + 1
+            }/${invoices.length}`
+          );
+        }
       } catch (error) {
-        if (error instanceof Error) {
+        if (error instanceof AxiosError) {
           logger.error(error.message, error);
-        } else if (error instanceof AxiosError) {
+          if (error.status === 400) {
+            const err: AxiosError<invoicePostError> = error;
+            logger.error(
+              `Error uploading invoice: ${err.response?.data.errors[0]?.message}`,
+              err
+            );
+          }
+        } else if (error instanceof Error) {
           logger.error(error.message, error);
         }
       }
     }
   });
-}
 
-(async () => {
-  await trendyolUpload("30-09-2023");
-})();
+  await browser.close();
+}

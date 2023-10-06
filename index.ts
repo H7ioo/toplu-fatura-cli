@@ -9,6 +9,8 @@ import { logger } from "./scripts/logger";
 import { Companies, Invoice, InvoiceScheme, Order, OrderScheme } from "./types";
 import { uploadWrapper } from "./scripts/upload";
 
+// TODO: PUSH THEN THROW ERROR, I DON'T WANT TO LOSE MY DATA (ZOD)
+
 (async () => {
   const transaction = await select({
     message: "Yapmak istediğiniz işlemi seçiniz",
@@ -68,7 +70,7 @@ import { uploadWrapper } from "./scripts/upload";
 
         OrderScheme.array().parse(data);
 
-        await createInvoice({ company, orders: data, date, isTestMode: true });
+        await createInvoice({ company, orders: data, date, isTestMode: false });
       } catch (error) {
         logger.error(error);
         if (error instanceof ZodError) {
@@ -142,6 +144,13 @@ import { uploadWrapper } from "./scripts/upload";
       });
 
       try {
+        if (!fs.existsSync(`./data/${company}/${date}/pdf`)) {
+          logger.info(
+            "PDF dosyası mevcut değil. İlk önce faturaları PDF dönüştürünüz."
+          );
+          continue;
+        }
+
         const dataString = fs.readFileSync(
           `./data/${company}/${date}/invoices.json`,
           "utf8"

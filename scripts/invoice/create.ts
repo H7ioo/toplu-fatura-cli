@@ -56,8 +56,10 @@ export async function createInvoice({
   await EInvoice.connect(); // veya EInvoice.getAccessToken()
   await EInvoice.getAccessToken();
 
-  const folderPath = `./data/${company}/${date}/html`;
-  createDirectory(folderPath);
+  const folderPath = `./data/${company}/${date}`;
+  const htmlFolderPath = `${folderPath}/html`;
+  const pdfFolderPath = `${folderPath}/pdf`;
+  createDirectory(htmlFolderPath);
 
   for (let i = 0; i < orders.length; i++) {
     const order = orders[i];
@@ -179,9 +181,9 @@ export async function createInvoice({
 
       const fileName = `${order.fullName}-${order.packageNumber}-${pad(
         order.orderDate.hours
-      )}.${pad(order.orderDate.minutes)}.html`;
+      )}.${pad(order.orderDate.minutes)}`;
 
-      fs.writeFile(`${folderPath}/${fileName}`, invoiceHTML, (err) => {
+      fs.writeFile(`${htmlFolderPath}/${fileName}.html`, invoiceHTML, (err) => {
         if (err) {
           return console.log(err);
         }
@@ -193,9 +195,9 @@ export async function createInvoice({
         fullName: order.fullName,
         isExport: order.isExport,
         orderTimestamp: order.orderDate.orderTimestamp,
-        fileName,
-        folderPath: `${folderPath}/`,
-        filePath: `${folderPath}/${fileName}`,
+        fileName: `${fileName}.pdf`,
+        folderPath: `${pdfFolderPath}/`,
+        filePath: `${pdfFolderPath}/${fileName}.pdf`,
       });
     } catch (e) {
       logger.error(`Fatura oluştururkan hata oluştu`, {

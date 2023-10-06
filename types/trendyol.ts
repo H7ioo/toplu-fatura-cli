@@ -145,3 +145,14 @@ type AdelInfo = {
   status: string;
   history?: null[] | null;
 };
+
+export type invoicePostError = {
+  timestamp: number;
+  exception: string | "CustomerInvoiceApiBusinessException";
+  errors: {
+    key: string;
+    message: string;
+    errorCode: string;
+    args: string[];
+  }[];
+};
