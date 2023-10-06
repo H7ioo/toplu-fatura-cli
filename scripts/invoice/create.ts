@@ -198,6 +198,7 @@ export async function createInvoice({
         fileName: `${fileName}.pdf`,
         folderPath: `${pdfFolderPath}/`,
         filePath: `${pdfFolderPath}/${fileName}.pdf`,
+        deliveryNumber: order.deliveryNumber,
       });
     } catch (e) {
       logger.error(`Fatura oluştururkan hata oluştu`, {

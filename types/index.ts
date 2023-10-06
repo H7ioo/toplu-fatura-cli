@@ -19,6 +19,7 @@ import { COMPANIES, EXPORT_TYPE } from "../lib/variables";
 export const OrderScheme = z.object({
   packageNumber: z.number(),
   orderNumber: z.string(),
+  deliveryNumber: z.string().optional(), // Hepsiburada
   orderDate: z.object({
     orderTimestamp: z.number(),
     year: z.number(),
@@ -64,6 +65,7 @@ export const InvoiceScheme = z.object({
   fileName: z.string(),
   folderPath: z.string(),
   filePath: z.string(),
+  deliveryNumber: z.string().optional(),
 });
 
 export type Invoice = z.infer<typeof InvoiceScheme>;

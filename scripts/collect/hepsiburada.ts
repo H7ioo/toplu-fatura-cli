@@ -92,6 +92,9 @@ export async function hepsiburadaCollect() {
     }
   }
 
+  // TODO: Sometimes it doesn't work properly
+
+  await sleep(3000);
   // Make five GET requests
   for (let i = 0; i < pages.length; i++) {
     const pageName = pages[i];
@@ -168,6 +171,7 @@ export async function hepsiburadaCollect() {
     const taxOffice = invoiceAddressObject.TaxOffice;
     const orderTimestamp = new Date(rawOrder.OrderCreatedDateTime).getTime();
     const orderDateObject = new Date(rawOrder.OrderCreatedDateTime);
+    const deliveryNumber = rawOrder.Code;
 
     const orderDate = {
       orderTimestamp,
@@ -215,6 +219,7 @@ export async function hepsiburadaCollect() {
       orderNumber,
       isCommercial,
       ordersList,
+      deliveryNumber,
     });
   });
 

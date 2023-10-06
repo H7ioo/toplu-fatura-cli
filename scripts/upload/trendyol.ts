@@ -1,11 +1,11 @@
+import axios, { AxiosError } from "axios";
+import FormData from "form-data";
+import * as fs from "fs";
 import puppeteer from "puppeteer";
 import { env } from "../../lib/env";
-import axios, { AxiosError, AxiosResponse } from "axios";
-import * as fs from "fs";
-import FormData from "form-data";
-import { logger } from "../logger";
 import { Invoice } from "../../types";
 import { invoicePostError } from "../../types/trendyol";
+import { logger } from "../logger";
 
 const GOTO_URL = "https://partner.trendyol.com/orders/shipment-packages/all";
 // invoiceNumber
@@ -99,9 +99,11 @@ export async function trendyolUpload(date: string) {
           }
         );
 
+        // TODO: ADD SLEEP
+
         if (res.status >= 200 && res.status < 300) {
           console.log(
-            `${invoice.packageNumber} invoice uploaded successfully. Index: ${
+            `${invoice.packageNumber} fatura başarıyla yüklendi. Index: ${
               index + 1
             }/${invoices.length}`
           );
