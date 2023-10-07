@@ -17,8 +17,6 @@ import { Companies, Invoice, InvoiceScheme, Order } from "../../types";
 import { logger } from "../logger";
 import { ZodError } from "zod";
 
-// TODO: AFTER FINISH CONSOLE.LOG ERROR COUNT etc.
-
 export async function createInvoice({
   orders,
   date,
@@ -31,6 +29,7 @@ export async function createInvoice({
   company: Companies[number];
 }) {
   const invoices: Invoice[] = [];
+  const errors: string[] = [];
 
   logger.info(
     `${orders.length} orders invoice for ${company} company will be created.`
@@ -207,6 +206,7 @@ export async function createInvoice({
       });
 
       console.error(e, order);
+      errors.push(`${order.fullName} - ${order.packageNumber} - ${e}`);
 
       if (e instanceof EInvoiceTypeError) {
         logger.error("Tür hatası meydana geldi:", e);
@@ -236,6 +236,12 @@ export async function createInvoice({
         logger.error(`Axios hatası meydana geldi`, e);
       } else {
         logger.error(`Bilinmeyen bir hata meydana geldi`, e);
+      }
+    } finally {
+      if (errors.length > 0) {
+        logger.info(`${errors.length} errors occured`, errors);
+      } else {
+        logger.info("No errors occured ;)");
       }
     }
   }

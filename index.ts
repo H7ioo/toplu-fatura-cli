@@ -11,15 +11,26 @@ import { uploadWrapper } from "./scripts/upload";
 
 // TODO: PUSH THEN THROW ERROR, I DON'T WANT TO LOSE MY DATA (ZOD)
 
-(async () => {
-  const transaction = await select({
-    message: "Yapmak istediğiniz işlemi seçiniz",
-    choices: TRANSACTIONS.map((transaction) => ({ value: transaction })),
-  });
+// npm run start TRANSACTION_NAME
 
-  // TODO: Select date before
+(async () => {
+  const args = process.argv.slice(2);
+  const TRANSACTION = args[0] as (typeof TRANSACTIONS)[number];
+
+  let transaction: (typeof TRANSACTIONS)[number];
+
+  if (TRANSACTION && TRANSACTIONS.includes(TRANSACTION)) {
+    transaction = TRANSACTION;
+  } else {
+    transaction = await select({
+      message: "Yapmak istediğiniz işlemi seçiniz",
+      choices: TRANSACTIONS.map((transaction) => ({ value: transaction })),
+    });
+  }
+
+  // TODO: Select date before the second company popup
   // TODO: All
-  // TODO: Select specific order
+  // TODO: Select specific order (by package name etc.)
 
   if (transaction === "collectData") {
     const selectedCompanies = await checkbox<Companies[number]>({
