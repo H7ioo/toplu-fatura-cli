@@ -7,6 +7,7 @@ import { Invoice } from "../../types";
 import { invoicePostError } from "../../types/trendyol";
 import { logger } from "../logger";
 import { readFile } from "fs/promises";
+import { sleep } from "../../lib/utils";
 
 const GOTO_URL = "https://partner.trendyol.com/orders/shipment-packages/all";
 // invoiceNumber
@@ -96,7 +97,7 @@ export async function trendyolUpload(date: string) {
         }
       );
 
-      // TODO: ADD SLEEP
+      await sleep(1000 * (Math.random() * 5));
 
       if (res.status >= 200 && res.status < 300) {
         console.log(

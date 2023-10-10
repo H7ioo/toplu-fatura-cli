@@ -91,7 +91,7 @@ export async function hepsiburadaUpload(date: string) {
         }
       );
 
-      // TODO: ADD SLEEP
+      await sleep(1000 * (Math.random() * 5));
 
       if (res.status >= 200 && res.status < 300) {
         console.log(
