@@ -83,6 +83,9 @@ export async function hepsiburadaCollect() {
     try {
       await page.waitForSelector(emailInput);
       await page.type(emailInput, env.HEPSIBURADA_EMAIL);
+      const passwordInputExists = await page.$(passwordInput);
+      if (!passwordInputExists) await page.click(loginBtn);
+      await page.waitForSelector(passwordInput);
       await page.type(passwordInput, env.HEPSIBURADA_PASSWORD);
       await page.click(loginBtn);
       await page.waitForNavigation();
