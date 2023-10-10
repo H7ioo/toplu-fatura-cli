@@ -237,19 +237,17 @@ export async function createInvoice({
       } else {
         logger.error(`Bilinmeyen bir hata meydana geldi`, e);
       }
-    } finally {
-      if (errors.length > 0) {
-        logger.info(`${errors.length} errors occured`, errors);
-      } else {
-        logger.info("No errors occured ;)");
-      }
     }
   }
 
   // e-Arşiv oturumunu sonlandırır.
   await EInvoice.logout();
 
-  await sleep(2000);
+  if (errors.length > 0) {
+    logger.info(`${errors.length} errors occured`, errors);
+  } else {
+    logger.info("No errors occured ;)");
+  }
 
   try {
     InvoiceScheme.array().parse(invoices);
