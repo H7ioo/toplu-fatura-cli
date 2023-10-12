@@ -1,4 +1,5 @@
 import axios from "axios";
+import cheerio from "cheerio";
 import EInvoice, {
   CreateDraftInvoicePayload,
   EInvoiceApiError,
@@ -188,8 +189,16 @@ export async function createInvoice({
         }
       });
 
+      const $ = cheerio.load(invoiceHTML);
+      const invoiceNumber = $(
+        "#despatchTable > tbody > tr:nth-child(4) > td:nth-child(2)"
+      )
+        .text()
+        .trim();
+
       invoices.push({
         id: result,
+        invoiceNumber,
         packageNumber: order.packageNumber,
         fullName: order.fullName,
         isExport: order.isExport,
@@ -246,7 +255,7 @@ export async function createInvoice({
   if (errors.length > 0) {
     logger.info(`${errors.length} errors occured`, errors);
   } else {
-    logger.info("No errors occured ;)");
+    logger.info("No error(s) occured ;)");
   }
 
   try {

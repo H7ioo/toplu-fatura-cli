@@ -6,8 +6,9 @@ import { COMPANIES, TRANSACTIONS } from "./lib/variables";
 import { collectWrapper } from "./scripts/collect";
 import { createInvoice } from "./scripts/invoice/create";
 import { logger } from "./scripts/logger";
-import { Companies, Invoice, InvoiceScheme, Order, OrderScheme } from "./types";
 import { uploadWrapper } from "./scripts/upload";
+import { Companies, Invoice, InvoiceScheme, Order, OrderScheme } from "./types";
+import type { Choice } from "@inquirer/select/dist/cjs/types/index";
 
 // TODO: PUSH THEN THROW ERROR, I DON'T WANT TO LOSE MY DATA (ZOD)
 
@@ -71,6 +72,16 @@ import { uploadWrapper } from "./scripts/upload";
         choices: directories,
       });
 
+      // TODO:
+      const constraines: "none" | "packageNumber" | "Micro" = await select({
+        message: "Darlama alanı seçiniz",
+        choices: [
+          { name: "istemiyorum", value: "none" },
+          { value: "packageNumber", name: "Paket numarası ile" },
+          { value: "Micro", name: "Mikro ihracat" },
+        ],
+      });
+
       try {
         const dataString = fs.readFileSync(
           `./data/${company}/${date}/orders.json`,
@@ -81,7 +92,25 @@ import { uploadWrapper } from "./scripts/upload";
 
         OrderScheme.array().parse(data);
 
-        await createInvoice({ company, orders: data, date, isTestMode: false });
+        const constrainedData: Order[] = [];
+
+        if (constraines === "Micro") {
+          constrainedData.push(
+            ...data.filter((order) => order.isExport === true)
+          );
+          // TODO: packageNumber input
+        } else if (constraines === "packageNumber") {
+          // constrainedData.push(...data.filter(order => order.isExport === true))
+        } else if (constraines === "none") {
+          constrainedData.push(...data);
+        }
+
+        await createInvoice({
+          company,
+          orders: constrainedData,
+          date,
+          isTestMode: false,
+        });
       } catch (error) {
         logger.error(error);
         if (error instanceof ZodError) {
@@ -186,3 +215,7 @@ import { uploadWrapper } from "./scripts/upload";
 // TODO NOTION
 
 // TODO: REMOVE DUPLACATED CODE
+// TODO: Create invoice for 1 user or multiple users
+
+// SAMPLE ERROR:
+// https://sellerpublic-mars.trendyol.com/order-core-sellercenterordersbff-service/shipment-packages/X/customer-invoice

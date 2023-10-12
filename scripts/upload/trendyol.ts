@@ -90,7 +90,7 @@ export async function trendyolUpload(date: string) {
           },
           params: invoice.isExport
             ? {
-                invoiceNumber: invoice.id,
+                invoiceNumber: invoice.invoiceNumber,
                 invoiceDateTime: invoice.orderTimestamp,
               }
             : undefined,

@@ -36,7 +36,7 @@ export type TrendyolOrder = {
   dispatchType: string;
   bulkSales: boolean;
   invoiceLink: string;
-  exportType: "None" | "Mikro"; // Mikro ihracat
+  exportType: "None" | "Micro"; // Mikro ihracat
   microTrackingLink: string;
   glocal: boolean; // Mikro ihracat
   giftBoxRequested: boolean;

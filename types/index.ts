@@ -58,6 +58,7 @@ export type Companies = typeof COMPANIES;
 
 export const InvoiceScheme = z.object({
   id: z.string(),
+  invoiceNumber: z.string(),
   packageNumber: z.number(),
   orderTimestamp: z.number(),
   isExport: z.boolean(),
