@@ -152,6 +152,9 @@ export async function trendyolCollect() {
   );
 
   rawOrders.forEach((rawOrder) => {
+    const exportType = rawOrder.exportType;
+    const orderNumber = rawOrder.orderDetail.orderNumber;
+
     const packageNumber = rawOrder.id;
     const invoiceAddressObject = rawOrder.orderDetail.invoiceAddress;
     const firstName = invoiceAddressObject.firstName.trim();
@@ -159,7 +162,7 @@ export async function trendyolCollect() {
     const fullName = invoiceAddressObject.fullName.trim();
     const fullAddress = `${invoiceAddressObject.address1} ${invoiceAddressObject.neighborhood} ${invoiceAddressObject.district} ${invoiceAddressObject.city}`;
     const isCommercial = rawOrder.commercial;
-    const isExport = rawOrder.glocal;
+    const isExport = rawOrder.glocal && exportType === "Micro";
     const companyName = invoiceAddressObject.company;
     const VKN = invoiceAddressObject.taxNumber;
     const taxOffice = invoiceAddressObject.taxOffice;
@@ -176,9 +179,6 @@ export async function trendyolCollect() {
       seconds: orderDateObject.getSeconds(),
       localDate: orderDateObject.toLocaleDateString("TR").replace(/\./gi, "/"),
     };
-
-    const exportType = rawOrder.exportType;
-    const orderNumber = rawOrder.orderDetail.orderNumber;
 
     if (!rawOrder.orderDetail.lines)
       throw new Error("Customer didn't purchase anything?");
