@@ -11,6 +11,8 @@ import { Companies, Invoice, InvoiceScheme, Order, OrderScheme } from "./types";
 import type { Choice } from "@inquirer/select/dist/cjs/types/index";
 
 // TODO: PUSH THEN THROW ERROR, I DON'T WANT TO LOSE MY DATA (ZOD)
+// TODO: PRINT PDF FASTER
+// TODO: DELETE FOLDER AFTER 10 DAYS
 
 // npm run start TRANSACTION_NAME
 

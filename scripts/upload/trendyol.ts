@@ -14,12 +14,6 @@ const invoiceURL = (invoiceId: string) =>
   `https://sellerpublic-mars.trendyol.com/order-core-sellercenterordersbff-service/shipment-packages/${invoiceId}/customer-invoice`;
 
 export async function trendyolUpload(date: string) {
-  // Launch the browser and open a new blank page
-  const browser = await puppeteer.launch({
-    headless: false,
-    userDataDir: "./puppeteer/user_data",
-  });
-
   const invoicesFile = `./data/trendyol/${date}/invoices.json`;
 
   if (!fs.existsSync(invoicesFile)) {
@@ -30,8 +24,16 @@ export async function trendyolUpload(date: string) {
   const file = await readFile(invoicesFile, "utf8");
   const invoices: Invoice[] = JSON.parse(file);
 
+  console.log(`${invoices.length} invoices to go...`);
+
   const chunkSize = 50;
   for (let i = 0; i < invoices.length; i += chunkSize) {
+    // Launch the browser and open a new blank page
+    const browser = await puppeteer.launch({
+      headless: false,
+      userDataDir: "./puppeteer/user_data",
+    });
+
     const invoicesChunk = invoices.slice(i, i + chunkSize);
     const page = await browser.newPage();
 
@@ -104,7 +106,7 @@ export async function trendyolUpload(date: string) {
           console.log(
             `${invoice.packageNumber} fatura başarıyla yüklendi. Index: ${
               index + 1
-            }/${invoices.length}`
+            }/${invoicesChunk.length}`
           );
         }
       } catch (error) {
@@ -122,7 +124,7 @@ export async function trendyolUpload(date: string) {
         }
       }
     }
-  }
 
-  await browser.close();
+    await browser.close();
+  }
 }
