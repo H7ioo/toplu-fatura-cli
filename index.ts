@@ -8,7 +8,6 @@ import { createInvoice } from "./scripts/invoice/create";
 import { logger } from "./scripts/logger";
 import { uploadWrapper } from "./scripts/upload";
 import { Companies, Invoice, InvoiceScheme, Order, OrderScheme } from "./types";
-import type { Choice } from "@inquirer/select/dist/cjs/types/index";
 
 // TODO: PUSH THEN THROW ERROR, I DON'T WANT TO LOSE MY DATA (ZOD)
 // TODO: PRINT PDF FASTER

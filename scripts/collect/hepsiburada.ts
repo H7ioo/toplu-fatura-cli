@@ -168,8 +168,8 @@ export async function hepsiburadaCollect() {
     const isCommercial = ordersObject.IsCustomerCorporateIconShowable;
     const isExport = false; // Doesn't support it yet
     const companyName = ordersObject.IsCustomerCorporateIconShowable
-      ? shippingAddressObject.UserName
-      : invoiceAddressObject.UserName;
+      ? shippingAddressObject.UserName.trim()
+      : invoiceAddressObject.UserName.trim();
     const VKN = invoiceAddressObject.TaxNumber;
     const taxOffice = invoiceAddressObject.TaxOffice;
     const orderTimestamp = new Date(rawOrder.OrderCreatedDateTime).getTime();

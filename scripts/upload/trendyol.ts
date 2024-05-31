@@ -118,10 +118,8 @@ export async function trendyolUpload(date: string, leftInvoices?: Invoice[]) {
             error
           );
         } else if (error.response?.status === 401) {
-          logger.error(
-            `Unauthorized error. Re-running function ${error.response?.data.errors[0]?.message}`,
-            error
-          );
+          logger.error(`Unauthorized error. Re-running function.`, error);
+          logger.info(error.response.data);
           const leftInvoices = invoices.slice(index);
           await browser.close();
           await trendyolUpload(date, leftInvoices);
